@@ -1,3 +1,8 @@
+"""
+An implementation of the basic model described in Chan, Nicholas Tung, and Christian Shelton.
+"An electronic market-maker." (2001).
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -17,6 +22,7 @@ EVENT_ALL = \
 """ 
 Default simulation parameters.
 """
+
 INITIAL_PRICE = 200
 MAX_T = 150
 
