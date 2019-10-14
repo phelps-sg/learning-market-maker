@@ -163,35 +163,44 @@ class MarketSimulation:
                                         time-series of actions (changes to the market maker's quote).
         """
 
+        # Initialise time series
         mm_prices = np.zeros(self.max_t)
         order_imbalances = np.zeros(self.max_t)
         informed_orders = np.zeros(self.max_t)
-        rewards = np.zeros(self.max_t);
+        rewards = np.zeros(self.max_t)
         actions = np.zeros(self.max_t)
 
+        # The time of the last change to the market-maker's quote
         t_mm = 0
+
+        # Initialise the quote to the initial fundamental price
         mm_current_price = self.initial_price
 
         for t in range(self.max_t):
 
+            # Calculate the order-flow for this time period; +1 for a buy order, or -1 for a sell order
             if events[t] == EVENT_INFORMED_ARRIVAL:
                 order = self.informed_strategy(fundamental_price[t], mm_current_price)
                 informed_orders[t] = order
             else:
                 order = uninformed_orders[t]
 
+            # Calculate the aggregate order-imbalance (IMB) since the last change in quote
             imbalance = np.sum(informed_orders[t_mm:t] + uninformed_orders[t_mm:t])
 
+            # Update the market maker's quote
             mm_price_delta = self.mm_policy.price_delta(imbalance)
             if mm_price_delta != 0:
-                t_mm = t
+                t_mm = t   # Update the time since the last quote change
                 mm_current_price += mm_price_delta
 
+            # Update time series
             order_imbalances[t] = imbalance
             mm_prices[t] = mm_current_price
             actions[t] = mm_price_delta
             rewards[t] = self.mm_reward(fundamental_price[t], mm_current_price, order)
 
+            # Provide feedback to the market-maker's policy (required for learning)
             if t > 0:
                 self.mm_policy.update(order_imbalances[t-1], actions[t-1], rewards[t],
                                         imbalance, mm_price_delta)
@@ -216,6 +225,7 @@ class MarketSimulation:
 
 
 class QTable:
+    """ A class representing a table of Q values for every state-action pair. """
 
     def __init__(self, table=None, all_actions=[-1, 0, +1], all_states=range(-2, 3)):
         self.actions = all_actions
@@ -229,6 +239,11 @@ class QTable:
             self.Q = table
 
     def state(self, imbalance):
+        """
+        Map from a state to the index of a row of the table.
+        :param imbalance:   The state of the market
+        :return:            The row index corresponding to this state.
+        """
         s = int(imbalance) + self.offset
         if s >= self.num_states:
             return self.num_states
@@ -238,21 +253,41 @@ class QTable:
             return s
 
     def action(self, price_delta):
+        """
+        Map from an action to the index of a column of the table.
+        :param price_delta:   The action
+        :return:              The column index corresponding to the action.
+        """
         return int(price_delta) + 1
 
     def q_values(self, imbalance):
+        """
+        Map from a state to a vector of the q-values for each action in this state.
+        :param imbalance:   The state of the market.
+        :return:            A vector (slice) of Q-values for the specified state
+        """
         return self.Q[self.state(imbalance), :]
 
     def q_value(self, imbalance, price_delta):
+        """
+        Return the q-value for the specified state and action.
+        :param imbalance:       The state
+        :param price_delta:     The action
+        :return:                A single scalar q-value for the state-action pair.
+        """
         return self.Q[self.state(imbalance), self.action(price_delta)]
 
     def as_DataFrame(self):
+        """ Return the q-values as a pandas DataFrame.  """
         return pd.DataFrame(self.Q,
                              columns=["$\Delta p=%s$" % a for a in self.actions],
                              index=self.states)
 
 
 class SarsaLearner(QTable):
+    """
+    An implementaiton of the SARSA on-policy control algorithm
+    """
 
     def __init__(self, table=None, all_actions=[-1, 0, +1], all_states=range(-2, 3), alpha=0.01, gamma=0.0):
         QTable.__init__(table, all_actions, all_states)
@@ -260,11 +295,20 @@ class SarsaLearner(QTable):
         self.gamma = gamma
 
     def update(self, s, a, r_, s_, a_):
+        """
+        Update the Q values from feedback with the environment
+        :param s:   The previous state
+        :param a:   The previous action
+        :param r_:  The current reward
+        :param s_:  The current state
+        :param a_:  The current action
+        """
         self.Q[self.state(s), self.action(a)] += \
             self.alpha * (r_ + self.gamma * (self.q_value(s_, a_) - self.q_value(s, a)))
 
 
 class LearningMarketMaker(MarketMakerPolicy, SarsaLearner):
+    """ A market-making policy which uses SARSA for action-selection.  """
 
     def __init__(self, all_actions=[01, 0, +1], all_states=range(-2, 3), alpha=0.01, gamma=0.99, epsilon=0.02):
         SarsaLearner.__init__(None, all_actions, all_states, alpha, gamma)
@@ -281,21 +325,30 @@ class LearningMarketMaker(MarketMakerPolicy, SarsaLearner):
         return action
 
 
-def expected_reward_by_state_action(policy, all_states, all_actions=[-1, 0, 1],
-                                        probabilities=ALL_PROB, samples=1000):
+def expected_reward_by_state_action(policy, all_actions=[-1, 0, 1], all_states=range(-2, 3), probabilities=ALL_PROB,
+                                        samples=1000):
+    """
+    Compute a value function for state-action pairs using Monte-Carlo simulation.
+    :param policy:              The policy to evaluate.
+    :param all_actions:         The action-space for the agent.
+    :param all_states:          The state-space for the agent.
+    :param probabilities:       The initial conditions for the simulation.
+    :param samples:             The number of samples.
+    :return:
+    """
 
+    # Initialise the array containing average rewards in each state and each action, for each trajectory.
     result = np.zeros((samples, len(all_states), len(all_actions)))
 
     for i in range(samples):
 
         simulation = MarketSimulation(policy, probabilities=probabilities)
-        _, states, rewards, actions = simulation.run()
+        _, _, states, rewards, actions = simulation.run()
 
         result[i, :, :] = \
             np.reshape(
                 [np.nanmean(rewards[(states == state) &
-                                    (actions == action)]) \
-                    for state in all_states for action in all_actions],
+                                    (actions == action)]) for state in all_states for action in all_actions],
                 (len(all_states), len(all_actions)))
 
     return QTable(np.nanmean(result, axis=0), all_actions, all_states)
