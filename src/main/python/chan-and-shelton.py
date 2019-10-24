@@ -323,7 +323,7 @@ class SarsaLearner(QTable):
         Update the Q values from feedback with the environment
         :param s:   The previous state
         :param a:   The previous action
-        :param r_:  The previous reward
+        :param r:  The previous reward
         :param s_:  The current state
         :param a_:  The current action
         """
