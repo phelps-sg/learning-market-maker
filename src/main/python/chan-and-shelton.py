@@ -41,6 +41,10 @@ PROB_INFORMED = 0.4
 ALL_PROB = [PROB_PRICE_DOWN, PROB_PRICE_UP, PROB_UNINFORMED_BUY, PROB_UNINFORMED_SELL, PROB_INFORMED]
 
 
+def int_zeros(n):
+    return np.array([0] * n)
+
+
 class MarketMakerPolicy:
     """
         A class representing a policy for a market-making strategy.
@@ -107,7 +111,7 @@ class MarketSimulation:
     def simulate_fundamental_price(self, events):
         """ Given a sequence events, return a vector representing the time-series of
         the fundamental price. """
-        price_changes = np.zeros(self.max_t)
+        price_changes = int_zeros(self.max_t)
         price_changes[events == EVENT_PRICE_CHANGE_DOWN] = -1
         price_changes[events == EVENT_PRICE_CHANGE_UP] = +1
         return self.initial_price + np.cumsum(price_changes)
@@ -115,7 +119,7 @@ class MarketSimulation:
     def simulate_uninformed_orders(self, events):
         """ Given a sequence of events, return a vector representing the time-series of
         order-flow from uninformed traders. """
-        orders = np.zeros(self.max_t)
+        orders = int_zeros(self.max_t)
         orders[events == EVENT_UNINFORMED_BUY] = +1
         orders[events == EVENT_UNINFORMED_SELL] = -1
         return orders
@@ -164,11 +168,11 @@ class MarketSimulation:
         """
 
         # Initialise time series
-        mm_prices = np.zeros(self.max_t)
-        order_imbalances = np.zeros(self.max_t)
-        informed_orders = np.zeros(self.max_t)
+        mm_prices = int_zeros(self.max_t)
+        order_imbalances = int_zeros(self.max_t)
+        informed_orders = int_zeros(self.max_t)
+        actions = int_zeros(self.max_t)
         rewards = np.zeros(self.max_t)
-        actions = np.zeros(self.max_t)
 
         # The time of the last change to the market-maker's quote
         t_mm = 0
@@ -305,7 +309,7 @@ class SarsaLearner(QTable):
         :param a_:  The current action
         """
         self.Q[self.state(s), self.action(a)] += \
-            self.alpha * (r + self.gamma * self.q_value(s_, a_ - self.q_value(s, a)))
+            self.alpha * (r + self.gamma * self.q_value(s_, a_) - self.q_value(s, a))
 
 
 class LearningMarketMaker(MarketMakerPolicy):
