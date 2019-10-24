@@ -290,7 +290,7 @@ class SarsaLearner(QTable):
     """
 
     def __init__(self, table=None, all_actions=[-1, 0, +1], all_states=range(-2, 3), alpha=0.01, gamma=0.0):
-        QTable.__init__(table, all_actions, all_states)
+        QTable.__init__(self, table, all_actions, all_states)
         self.alpha = alpha
         self.gamma = gamma
 
@@ -311,7 +311,7 @@ class LearningMarketMaker(MarketMakerPolicy, SarsaLearner):
     """ A market-making policy which uses SARSA for action-selection.  """
 
     def __init__(self, all_actions=[01, 0, +1], all_states=range(-2, 3), alpha=0.01, gamma=0.99, epsilon=0.02):
-        SarsaLearner.__init__(None, all_actions, all_states, alpha, gamma)
+        SarsaLearner.__init__(self, None, all_actions, all_states, alpha, gamma)
         MarketMakerPolicy.__init__(self)
         self.epsilon = epsilon
 
