@@ -244,9 +244,10 @@ class QTable:
         :param imbalance:   The state of the market
         :return:            The row index corresponding to this state.
         """
-        s = int(imbalance) + self.offset
-        if s >= self.num_states:
-            return self.num_states
+        s = int(imbalance) + self.state_offset
+        max = self.num_states - 1
+        if s > max:
+            return max
         elif s < 0:
             return 0
         else:
@@ -307,22 +308,25 @@ class SarsaLearner(QTable):
             self.alpha * (r + self.gamma * self.q_value(s_, a_ - self.q_value(s, a)))
 
 
-class LearningMarketMaker(MarketMakerPolicy, SarsaLearner):
+class LearningMarketMaker(MarketMakerPolicy):
     """ A market-making policy which uses SARSA for action-selection.  """
 
-    def __init__(self, all_actions=[01, 0, +1], all_states=range(-2, 3), alpha=0.01, gamma=0.99, epsilon=0.02):
-        SarsaLearner.__init__(self, None, all_actions, all_states, alpha, gamma)
+    def __init__(self, learner, epsilon=0.05):
         MarketMakerPolicy.__init__(self)
+        self.learner = learner
         self.epsilon = epsilon
 
     def price_delta(self, s):
         if np.random.random() <= self.epsilon:
             action = np.random.choice([-1, 0, +1])
         else:
-            values = self.q_values(s)
+            values = self.learner.q_values(s)
             max_value = np.max(values)
             action = np.random.choice(np.where(values == max_value)[0]) - 1
         return action
+
+    def update(self, s, a, r, s_, a_):
+        self.learner.update(s, a, r, s_, a_)
 
 
 def expected_reward_by_state_action(policy, all_actions=[-1, 0, 1], all_states=range(-2, 3), probabilities=ALL_PROB,
