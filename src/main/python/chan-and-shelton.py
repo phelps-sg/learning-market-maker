@@ -384,3 +384,11 @@ def expected_reward_by_state_action(policy, all_actions=[-1, 0, 1], all_states=r
     return QTable(np.nanmean(result, axis=0), all_actions, all_states)
 
 
+def learning_experiment(iterations=5000, probabilities=ALL_PROB, alpha=0.01, gamma=0., epsilon=0.05):
+    learner = SarsaLearner(alpha=alpha, gamma=gamma)
+    market_maker = LearningMarketMaker(learner, epsilon=epsilon)
+    simulation = MarketSimulation(market_maker)
+    for i in range(iterations):
+        results = simulation.run()
+    return learner, results
+
