@@ -8,7 +8,12 @@ This repo contains a Python implementation of the basic model described in Chan,
 ~~~python
 import matplotlib.pyplot as plt
 %run src/main/python/chan-and-shelton.py
-sim = MarketSimulation(ThresholdPolicy(threshold=2))
-fundamental_price, mm_price, order_imbalances, rewards, actions = sim.run()
-plt.plot(mm_price)
+learner, results = learning_experiment()
+print "Greedy policy is ", learner.greedy_policy()
+print "Q table: ", learner.as_DataFrame()
+p_f, p_mm, imb, r, a = results
+plt.figure()
+plt.plot(p_f)
+plt.plot(p_mm)
+plt.show()
 ~~~
