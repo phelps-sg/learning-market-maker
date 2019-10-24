@@ -242,7 +242,13 @@ class QTable:
         else:
             self.Q = table
 
-    def state(self, imbalance):
+    def state(self, index):
+        return self.states[int(index)]
+
+    def action(self, index):
+        return self.actions[int(index)]
+
+    def state_index(self, imbalance):
         """
         Map from a state to the index of a row of the table.
         :param imbalance:   The state of the market
@@ -257,7 +263,7 @@ class QTable:
         else:
             return s
 
-    def action(self, price_delta):
+    def action_index(self, price_delta):
         """
         Map from an action to the index of a column of the table.
         :param price_delta:   The action
@@ -271,7 +277,7 @@ class QTable:
         :param imbalance:   The state of the market.
         :return:            A vector (slice) of Q-values for the specified state
         """
-        return self.Q[self.state(imbalance), :]
+        return self.Q[self.state_index(imbalance), :]
 
     def q_value(self, imbalance, price_delta):
         """
@@ -280,13 +286,20 @@ class QTable:
         :param price_delta:     The action
         :return:                A single scalar q-value for the state-action pair.
         """
-        return self.Q[self.state(imbalance), self.action(price_delta)]
+        return self.Q[self.state_index(imbalance), self.action_index(price_delta)]
 
     def as_DataFrame(self):
         """ Return the q-values as a pandas DataFrame.  """
         return pd.DataFrame(self.Q,
                              columns=["$\Delta p=%s$" % a for a in self.actions],
                              index=self.states)
+
+    def greedy_policy(self):
+        def values(s):
+            return self.q_values(s)
+        return dict(
+            {(s, self.action(np.where(values(s) == np.max(values(s)))[0][0])) for s in self.states}
+        )
 
 
 class SarsaLearner(QTable):
@@ -308,7 +321,7 @@ class SarsaLearner(QTable):
         :param s_:  The current state
         :param a_:  The current action
         """
-        self.Q[self.state(s), self.action(a)] += \
+        self.Q[self.state_index(s), self.action_index(a)] += \
             self.alpha * (r + self.gamma * self.q_value(s_, a_) - self.q_value(s, a))
 
 
