@@ -79,9 +79,9 @@ class ThresholdPolicy(MarketMakerPolicy):
         :return: The integer change in the market-maker's quote
         """
         if imbalance == +self.threshold:
-            return -1
-        elif imbalance == -self.threshold:
             return +1
+        elif imbalance == -self.threshold:
+            return -1
         else:
             return 0
 
@@ -131,9 +131,9 @@ class MarketSimulation:
         :param mm_price:        The current market-maker quote
         :return:                The total shares demanded by the informed trader
         """
-        if current_price < mm_price:
+        if current_price > mm_price:
             return 1
-        elif current_price > mm_price:
+        elif current_price < mm_price:
             return -1
         else:
             return 0
@@ -147,9 +147,9 @@ class MarketSimulation:
                                            -1 if it is a sell, 0 for no transaction.
         :return:
         """
-        if order_sign > 0:
+        if order_sign < 0:
             return current_fundamental_price - mm_current_price
-        elif order_sign < 0:
+        elif order_sign > 0:
             return mm_current_price - current_fundamental_price
         else:
             return 0
