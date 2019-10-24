@@ -53,7 +53,7 @@ class MarketMakerPolicy:
     def price_delta(self, imbalance):
         pass
 
-    def update(self, s, a, r_, s_, a_):
+    def update(self, s, a, r, s_, a_):
         pass
 
 
@@ -202,7 +202,7 @@ class MarketSimulation:
 
             # Provide feedback to the market-maker's policy (required for learning)
             if t > 0:
-                self.mm_policy.update(order_imbalances[t-1], actions[t-1], rewards[t],
+                self.mm_policy.update(order_imbalances[t-1], actions[t-1], rewards[t-1],
                                         imbalance, mm_price_delta)
 
         return fundamental_price, mm_prices, order_imbalances, rewards, actions
@@ -294,17 +294,17 @@ class SarsaLearner(QTable):
         self.alpha = alpha
         self.gamma = gamma
 
-    def update(self, s, a, r_, s_, a_):
+    def update(self, s, a, r, s_, a_):
         """
         Update the Q values from feedback with the environment
         :param s:   The previous state
         :param a:   The previous action
-        :param r_:  The current reward
+        :param r_:  The previous reward
         :param s_:  The current state
         :param a_:  The current action
         """
         self.Q[self.state(s), self.action(a)] += \
-            self.alpha * (r_ + self.gamma * (self.q_value(s_, a_) - self.q_value(s, a)))
+            self.alpha * (r + self.gamma * self.q_value(s_, a_ - self.q_value(s, a)))
 
 
 class LearningMarketMaker(MarketMakerPolicy, SarsaLearner):
