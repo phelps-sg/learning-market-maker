@@ -42,7 +42,7 @@ ALL_PROB = [PROB_PRICE_DOWN, PROB_PRICE_UP, PROB_UNINFORMED_BUY, PROB_UNINFORMED
 
 
 def int_zeros(n):
-    return np.array([0] * n)
+    return np.zeros(n, dtype=np.int)
 
 
 class MarketMakerPolicy:
@@ -295,11 +295,17 @@ class QTable:
                              index=self.states)
 
     def greedy_policy(self):
+        """ Return the greedy policy as a dictionary where the keys are states, and the value is the optimal action """
         def values(s):
             return self.q_values(s)
         return dict(
             {(s, self.action(np.where(values(s) == np.max(values(s)))[0][0])) for s in self.states}
         )
+
+    def greedy_policy_fn(self):
+        """ Return the greedy policy as a Python function which maps states onto the greedy action for that state. """
+        p = self.greedy_policy()
+        return lambda s: p[s]
 
 
 class SarsaLearner(QTable):
