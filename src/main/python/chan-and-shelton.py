@@ -66,7 +66,7 @@ class MarketMakerPolicy:
 
 class ThresholdPolicy(MarketMakerPolicy):
     """
-    A class representing a market-policy in which we decrease (increase) the price
+    A class representing a market-policy in which we increase (decrease) the price
     when it reaches the positive (negative) of a pre-specified integer threshold.
     """
 
