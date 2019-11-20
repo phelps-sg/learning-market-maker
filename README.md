@@ -9,8 +9,8 @@ This repo contains a Python implementation of the basic model described in Chan,
 import matplotlib.pyplot as plt
 %run src/main/python/chan-and-shelton.py
 learner, results = learning_experiment()
-print "Greedy policy is ", learner.greedy_policy()
-print "Q table: ", learner.as_DataFrame()
+print("Greedy policy is ", learner.greedy_policy())
+print("Q table: ", learner.as_DataFrame())
 p_f, p_mm, imb, r, a = results
 plt.figure()
 plt.plot(p_f)

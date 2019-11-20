@@ -221,7 +221,7 @@ class MarketSimulation:
                                         time-series of fundamental prices,
                                         time-series of market-maker's prices,
                                         time-series of order-imbalance, time-series of rewards,
-                                        time-series of actions (changes to the market maker's quote).       :return:
+                                        time-series of actions (changes to the market maker's quote).
         """
 
         events = self.simulate_events()
@@ -239,7 +239,7 @@ class QTable:
         self.states = all_states
         self.num_states = len(all_states)
         self.num_actions = len(all_actions)
-        self.state_offset = self.num_states / 2
+        self.state_offset = abs(self.states.start)
         if table is None:
             self.Q = np.zeros((len(all_states), len(all_actions)))
         else:
