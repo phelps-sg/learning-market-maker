@@ -9,15 +9,15 @@ import pandas as pd
 """
 Simulation events
 """
-EVENT_PRICE_CHANGE_UP    = 0
-EVENT_PRICE_CHANGE_DOWN  = 1
-EVENT_UNINFORMED_BUY     = 2
-EVENT_UNINFORMED_SELL    = 3
-EVENT_INFORMED_ARRIVAL   = 4
+EVENT_PRICE_CHANGE_UP = 0
+EVENT_PRICE_CHANGE_DOWN = 1
+EVENT_UNINFORMED_BUY = 2
+EVENT_UNINFORMED_SELL = 3
+EVENT_INFORMED_ARRIVAL = 4
 
 EVENT_ALL = \
     [EVENT_PRICE_CHANGE_DOWN, EVENT_PRICE_CHANGE_UP, EVENT_UNINFORMED_SELL,
-         EVENT_UNINFORMED_BUY, EVENT_INFORMED_ARRIVAL]
+     EVENT_UNINFORMED_BUY, EVENT_INFORMED_ARRIVAL]
 
 """ 
 Default simulation parameters.
@@ -198,7 +198,7 @@ class MarketSimulation:
             # Update the market maker's quote
             mm_price_delta = self.mm_policy.price_delta(imbalance)
             if mm_price_delta != 0:
-                t_mm = t   # Update the time since the last quote change
+                t_mm = t  # Update the time since the last quote change
                 mm_current_price += mm_price_delta
 
             # Update time series
@@ -209,8 +209,8 @@ class MarketSimulation:
 
             # Provide feedback to the market-maker's policy (required for learning)
             if t > 0:
-                self.mm_policy.update(order_imbalances[t-1], actions[t-1], rewards[t-1],
-                                        imbalance, mm_price_delta)
+                self.mm_policy.update(order_imbalances[t - 1], actions[t - 1], rewards[t - 1],
+                                      imbalance, mm_price_delta)
 
         return fundamental_price, mm_prices, order_imbalances, rewards, actions
 
@@ -294,13 +294,15 @@ class QTable:
     def as_DataFrame(self):
         """ Return the q-values as a pandas DataFrame.  """
         return pd.DataFrame(self.Q,
-                             columns=["$\Delta p=%s$" % a for a in self.actions],
-                             index=self.states)
+                            columns=["$\Delta p=%s$" % a for a in self.actions],
+                            index=self.states)
 
     def greedy_policy(self):
         """ Return the greedy policy as a dictionary where the keys are states, and the value is the optimal action """
+
         def values(s):
             return self.q_values(s)
+
         return dict(
             {(s, self.action(np.where(values(s) == np.max(values(s)))[0][0])) for s in self.states}
         )
@@ -356,7 +358,7 @@ class LearningMarketMaker(MarketMakerPolicy):
 
 
 def expected_reward_by_state_action(policy, all_actions=[-1, 0, 1], all_states=range(-2, 3), probabilities=ALL_PROB,
-                                        samples=1000):
+                                    samples=1000):
     """
     Compute a value function for state-action pairs using Monte-Carlo simulation.
     :param policy:              The policy to evaluate.
@@ -371,7 +373,6 @@ def expected_reward_by_state_action(policy, all_actions=[-1, 0, 1], all_states=r
     result = np.zeros((samples, len(all_states), len(all_actions)))
 
     for i in range(samples):
-
         simulation = MarketSimulation(policy, probabilities=probabilities)
         _, _, states, rewards, actions = simulation.run()
 
@@ -391,4 +392,3 @@ def learning_experiment(iterations=5000, probabilities=ALL_PROB, alpha=0.01, gam
     for i in range(iterations):
         results = simulation.run()
     return learner, results
-
